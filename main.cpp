@@ -171,6 +171,18 @@ bool is_atom(struct TreeNode *leaf){
 	return false;
 }
 
+bool is_list(struct TreeNode *leaf){
+	if(leaf->right != NULL) return is_list(leaf->right);
+	if(leaf->key=="NIL" && leaf->right == NULL) return true;
+	else return false;
+}
+
+bool condcheck(struct TreeNode *leaf){
+	if(leaf->key=="NIL") return true;
+	if(!is_list(leaf->left)) return false;
+	return condcheck(leaf->right);
+}
+
 // Eval implementation
 struct TreeNode* eval(struct TreeNode* leaf){
 	//not a s-expression
@@ -375,14 +387,17 @@ struct TreeNode* eval(struct TreeNode* leaf){
 		return leaf->right->left;
 	}
 	//COND
-	// if(leaf->left->key=="COND"){
-	// 	if (treelength(leaf)==1)
-	// 	{
-	// 		cout << "ERROR : COND length == 1" << endl;
-	// 		exit(0);
-	// 	}else if(){}
-	// 	return leaf->right->left;
-	// }
+	if(leaf->left->key=="COND"){
+		if (treelength(leaf)==1)
+		{
+			cout << "ERROR : COND length == 1" << endl;
+			exit(0);
+		}else if(!condcheck(leaf->right)){
+			cout << "ERROR : COND undefined" << endl;
+			exit(0);
+		}
+		return leaf->right->left;
+	}
 
 
 	cout << "ERROR: eval undefined " << leaf->left->key << endl;
