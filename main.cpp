@@ -155,11 +155,6 @@ void printTree(struct TreeNode* node) {
   printTree(node->right); 
 } 
 
-int treelength(struct TreeNode *leaf){
-	if(leaf->key == "NIL") return 0;
-	return 1 + treelength(leaf->right);
-}
-
 bool isLetter(struct TreeNode **leaf){
 	if((*leaf)->key[0]>=65 && (*leaf)->key[0]<=90) return true;
 	return false;
@@ -172,15 +167,42 @@ bool is_atom(struct TreeNode *leaf){
 }
 
 bool is_list(struct TreeNode *leaf){
-	if(leaf->right != NULL) return is_list(leaf->right);
-	if(leaf->key=="NIL" && leaf->right == NULL) return true;
-	else return false;
+	if(leaf->right==NULL){
+		if(leaf->key!="NIL")return false;
+		else return true;
+	}else return is_list(leaf->right);
 }
 
-bool condcheck(struct TreeNode *leaf){
-	if(leaf->key=="NIL") return true;
+bool si_list(struct TreeNode *leaf){
 	if(!is_list(leaf->left)) return false;
-	return condcheck(leaf->right);
+	if(leaf->right->key=="NIL") return true;
+	return si_list(leaf->right);
+}
+
+int treelength(struct TreeNode *leaf){
+	if(!is_list(leaf)){
+		cout << "ERROR : length undefined, input is not a list" << endl;
+		exit(0);
+	}
+	if(leaf->key == "NIL") return 0;
+	return 1 + treelength(leaf->right);
+}
+
+bool si_length(struct TreeNode *leaf){
+	if(treelength(leaf->left)!=2) return false;
+	if(leaf->right->key=="NIL") return true;
+	return si_length(leaf->right);
+}
+
+struct TreeNode* eval(struct TreeNode* leaf);
+
+struct TreeNode* cond(struct TreeNode* leaf){
+	if(eval(leaf->left->left)->key!="NIL") return eval(leaf->left->right->left); // good
+	if(leaf->right->key=="NIL"){
+			cout << "ERROR : undefined COND " <<endl;
+			exit(0);
+	}
+	return cond(leaf->right);
 }
 
 // Eval implementation
@@ -388,15 +410,17 @@ struct TreeNode* eval(struct TreeNode* leaf){
 	}
 	//COND
 	if(leaf->left->key=="COND"){
-		if (treelength(leaf)==1)
-		{
-			cout << "ERROR : COND length == 1" << endl;
+		if (treelength(leaf)==1){
+			cout << "ERROR : COND length can't be 1" << endl;
 			exit(0);
-		}else if(!condcheck(leaf->right)){
-			cout << "ERROR : COND undefined" << endl;
+		}else if(!si_list(leaf->right)){
+			cout << "ERROR : COND - some si is not a list" << endl;
+			exit(0);
+		}else if(!si_length(leaf->right)){
+			cout << "ERROR : COND - some si is a list such that length(si) != 2" << endl;
 			exit(0);
 		}
-		return leaf->right->left;
+		return cond(leaf->right);
 	}
 
 
@@ -441,6 +465,31 @@ void treetotree(struct TreeNode* leaf, int index){
 	}
 }
 
+void printlist(struct TreeNode* leaf){ // input MUST not be a single atom
+	cout<<"(";
+	struct TreeNode* temp=leaf;
+	while(temp->left!=NULL){
+		if(temp->left->left!=NULL) printlist(temp->left);
+		else cout << temp->left->key;
+		if(temp->right->key!="NIL") cout << " ";
+		temp = temp->right;
+	}
+	if(temp->key!="NIL"){
+		cout << ". " << temp->key << ")";
+	}else{
+		cout << ")";
+	}
+}
+
+void treetolist(struct TreeNode* leaf){
+	if(leaf->right==NULL){
+		cout << leaf->key;
+	}else{
+		printlist(leaf);
+	}
+	cout << endl;
+}
+
 void Start(){
 	Check();
 	while(s.Current.Type != "EOF"){
@@ -455,20 +504,21 @@ void Start(){
 		//printtree(0);// uncomment to see tree. (my_index,content,back_index,left_index,right_index)
 		root = NewNode(tree[0].key);
 		treetotree(root, 0);
-		drawtreeDOT(0);
-		cout << "pretty : ";
-		pretty(0);
-		cout<<endl;
 
-		cout << "input  : ";
-		printtree2(root);
-		cout << endl;
+		// cout << "pretty : ";
+		// pretty(0);
+		// cout<<endl;
+
+		// cout << "input  : ";
+		// printtree2(root);
+		// cout << endl;
 
 		root = eval(root);
 
-		cout << "output : ";
-		printtree2(root);
-		cout << endl;
+		// cout << "output : ";
+		// printtree2(root);
+		// cout << endl;
+		treetolist(root);
 	}
 }
 

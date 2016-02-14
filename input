@@ -1,1 +1,2 @@
-(GREATER (PLUS 5 6) 10)
+(CONS 2 (CONS 3 (CONS 4 5)))
+(CONS (QUOTE (1 2) ) (QUOTE (3 4) ) )
